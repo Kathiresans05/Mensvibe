@@ -1,0 +1,28 @@
+{
+  "name": "dress-fashion-ecommerce",
+  "version": "1.0.0",
+  "description": "Direct-to-Customer (D2C) Fashion E-Commerce Platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "admin"
+  ],
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:admin": "npm --prefix admin run dev",
+    "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install && npm --prefix admin install"
+  },
+  "keywords": [
+    "fashion",
+    "ecommerce",
+    "d2c",
+    "react",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}
