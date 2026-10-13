@@ -1,4 +1,15 @@
 const Product = require('./Product.model');
+const cloudinary = require('../../config/cloudinary');
+
+const uploadImageIfNeeded = async (img) => {
+  if (typeof img === 'string' && img.startsWith('data:image')) {
+    const uploadRes = await cloudinary.uploader.upload(img, {
+      folder: 'mensvibe_products',
+    });
+    return uploadRes.secure_url;
+  }
+  return img;
+};
 
 // @desc    Get products with filters, sorting, search & pagination
 // @route   GET /api/products
@@ -101,12 +112,18 @@ const getProductBySlug = async (req, res, next) => {
 // @route   POST /api/products
 const createProduct = async (req, res, next) => {
   try {
-    const { name, ...rest } = req.body;
+    const { name, images, ...rest } = req.body;
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now().toString().slice(-4);
+
+    let processedImages = [];
+    if (images && Array.isArray(images)) {
+      processedImages = await Promise.all(images.map(uploadImageIfNeeded));
+    }
 
     const product = await Product.create({
       name,
       slug,
+      images: processedImages,
       ...rest,
     });
 
@@ -120,7 +137,12 @@ const createProduct = async (req, res, next) => {
 // @route   PUT /api/products/:id
 const updateProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+    if (updateData.images && Array.isArray(updateData.images)) {
+      updateData.images = await Promise.all(updateData.images.map(uploadImageIfNeeded));
+    }
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });

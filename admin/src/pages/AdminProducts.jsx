@@ -10,6 +10,7 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -68,6 +69,11 @@ const AdminProducts = () => {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
+    if (!formData.images[0]) {
+      alert('Please upload a product image');
+      return;
+    }
+    setSubmitting(true);
     try {
       // Ensure variants exist
       const productPayload = {
@@ -83,10 +89,12 @@ const AdminProducts = () => {
       if (res.data.success) {
         setModalOpen(false);
         fetchProducts();
-        alert('Product added successfully!');
+        alert('Product added successfully and image saved to Cloudinary!');
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Error creating product');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -329,9 +337,13 @@ const AdminProducts = () => {
                   }}
                   className="w-full p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:bg-white transition-all file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-900 file:text-white hover:file:bg-black cursor-pointer"
                 />
-                {formData.images[0] && formData.images[0].startsWith('data:image') && (
-                  <div className="mt-3">
-                    <img src={formData.images[0]} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                {formData.images[0] && (
+                  <div className="mt-3 flex items-center space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <img src={formData.images[0]} alt="Preview" className="w-14 h-14 object-cover rounded-lg border border-slate-200" />
+                    <div>
+                      <p className="text-[11px] font-semibold text-slate-800">Image Selected</p>
+                      <p className="text-[10px] text-emerald-600 font-medium">✓ Will be stored in Cloudinary CDN</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -412,9 +424,17 @@ const AdminProducts = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold shadow-sm"
+                  disabled={submitting}
+                  className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold shadow-sm disabled:opacity-50 flex items-center space-x-2"
                 >
-                  Save & Publish Product
+                  {submitting ? (
+                    <>
+                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block"></span>
+                      <span>Uploading to Cloudinary...</span>
+                    </>
+                  ) : (
+                    <span>Save & Publish Product</span>
+                  )}
                 </button>
               </div>
             </form>

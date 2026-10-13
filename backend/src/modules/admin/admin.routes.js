@@ -32,17 +32,40 @@ router.get('/reviews', getAllReviewsAdmin);
 router.patch('/reviews/:id/status', updateReviewStatus);
 router.delete('/reviews/:id', deleteReview);
 
-// Image Upload Endpoint
-router.post('/upload', upload.array('images', 5), (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ success: false, message: 'Please upload at least one image' });
-  }
+const cloudinary = require('../../config/cloudinary');
+const fs = require('fs');
 
-  const fileUrls = req.files.map((file) => `/uploads/${file.filename}`);
-  res.status(200).json({
-    success: true,
-    urls: fileUrls,
-  });
+// Image Upload Endpoint (Cloudinary)
+router.post('/upload', upload.array('images', 5), async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: 'Please upload at least one image' });
+    }
+
+    const uploadPromises = req.files.map(async (file) => {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder: 'mensvibe_products',
+      });
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return result.secure_url;
+    });
+
+    const fileUrls = await Promise.all(uploadPromises);
+
+    res.status(200).json({
+      success: true,
+      urls: fileUrls,
+    });
+  } catch (error) {
+    if (req.files) {
+      req.files.forEach((file) => {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      });
+    }
+    next(error);
+  }
 });
 
 module.exports = router;
